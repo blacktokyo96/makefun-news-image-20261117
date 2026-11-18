@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MAX_BYTES = 1048576;
+const OUTPUT_NAME = 'entry.png';
 
 if (process.argv.slice(2).some((arg) => arg === '--help' || arg === '-h')) {
   console.log('Usage: node main.ts [--help|-h]\nCopies entry.png next to this script to $MAKEFUN_OUTPUT_DIR/entry.png (default /output/entry.png).');
@@ -18,12 +19,13 @@ try {
   const sourcePath = path.join(__dirname, 'entry.png');
   if (!fs.existsSync(sourcePath)) throw new Error(`Source is missing: ${sourcePath}`);
   if (fs.statSync(sourcePath).size > MAX_BYTES) throw new Error(`Source exceeds MAX_BYTES (${MAX_BYTES} bytes).`);
+  if (!fs.statSync(sourcePath).isFile()) throw new Error(`Source is not a regular file: ${sourcePath}`);
   const source = fs.readFileSync(sourcePath);
   if (source.length > MAX_BYTES) throw new Error(`Source exceeds MAX_BYTES (${MAX_BYTES} bytes).`);
   const sourceMagic = magic(source);
   const outputDir = process.env.MAKEFUN_OUTPUT_DIR || '/output';
   fs.mkdirSync(outputDir, { recursive: true });
-  const outputPath = path.join(outputDir, 'entry.png');
+  const outputPath = path.join(outputDir, OUTPUT_NAME);
   fs.writeFileSync(outputPath, source);
   const written = fs.readFileSync(outputPath);
   if (written.length !== source.length || !magic(written).equals(sourceMagic)) {
